@@ -6,6 +6,13 @@ agent {
   }
 }
 
+stage('Install Docker CLI') {
+  steps {
+    sh 'apk add docker-cli'
+  }
+}
+
+
   stages {
     stage('Checkout') {
       steps {
