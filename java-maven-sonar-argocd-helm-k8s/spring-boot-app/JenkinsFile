@@ -58,7 +58,6 @@ agent {
                     echo "WORKSPACE: ${WORKSPACE}"
 
                     cd ${WORKSPACE
-                    echo "Now inside workspace:"
                     pwd
                     ls -a
                     git config user.email "shravanoncloud6@gmail.com"
