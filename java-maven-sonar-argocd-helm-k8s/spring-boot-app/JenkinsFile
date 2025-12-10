@@ -54,7 +54,11 @@ agent {
         steps {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
                 sh '''
-                    cd $PWD
+                    echo "PWD: $PWD"
+                    echo "WORKSPACE: ${WORKSPACE}"
+
+                    cd ${WORKSPACE
+                    echo "Now inside workspace:"
                     pwd
                     ls -a
                     git config user.email "shravanoncloud6@gmail.com"
