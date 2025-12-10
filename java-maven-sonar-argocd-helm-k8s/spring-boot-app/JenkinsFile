@@ -1,10 +1,11 @@
 pipeline {
-    agent {
-    docker {
-     image 'maven:3.9.9-eclipse-temurin-17-docker'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-    }
+agent {
+  docker {
+    image 'maven:3.9.9-eclipse-temurin-17-alpine'
+    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
   }
+}
+
   stages {
     stage('Checkout') {
       steps {
