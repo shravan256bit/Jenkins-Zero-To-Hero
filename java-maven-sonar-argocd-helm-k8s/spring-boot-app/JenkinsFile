@@ -1,5 +1,9 @@
 pipeline {
 
+  options {
+    skipDefaultCheckout(true)   // IMPORTANT: we will manually checkout
+  }
+
   agent {
     docker {
       image 'shravan256bit/maven-docker-agent:v1'
@@ -9,19 +13,21 @@ pipeline {
 
   stages {
 
-    stage('Checkout Code') {
+    stage('Checkout') {
       steps {
-        git branch: 'main', url: 'https://github.com/shravan256bit/Jenkins-Zero-To-Hero.git'
-        sh 'echo Checkout completed'
+        checkout([$class: 'GitSCM',
+          branches: [[name: 'main']],
+          userRemoteConfigs: [[url: 'https://github.com/shravan256bit/Jenkins-Zero-To-Hero.git']]
+        ])
       }
     }
 
-    stage('Build & Test') {
+    stage('Build and Test') {
       steps {
-        sh '''
+        sh """
           cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
           mvn clean package
-        '''
+        """
       }
     }
 
@@ -30,64 +36,63 @@ pipeline {
         SONAR_URL = "http://16.170.208.187:9000"
       }
       steps {
-        withEnv(["JAVA_HOME=/usr/local/openjdk-17", "PATH+JAVA=/usr/local/openjdk-17/bin"]) {
-          withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-            sh '''
-              cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-              mvn sonar:sonar \
-                -Dsonar.host.url=${SONAR_URL} \
-                -Dsonar.login=${SONAR_AUTH_TOKEN}
-            '''
-          }
+        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
+          sh """
+            cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+            mvn sonar:sonar \
+              -Dsonar.login=$SONAR_TOKEN \
+              -Dsonar.host.url=${SONAR_URL}
+          """
         }
       }
     }
 
-    stage('Build & Push Docker Image') {
+    stage('Build and Push Docker Image') {
       environment {
         DOCKER_IMAGE = "shravan256bit/ultimate-cicd:${BUILD_NUMBER}"
       }
       steps {
         script {
-          sh '''
+          sh """
             cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
             docker build -t ${DOCKER_IMAGE} .
-          '''
+          """
 
           docker.withRegistry('https://index.docker.io/v1/', 'docker-cred') {
-            docker.image("${DOCKER_IMAGE}").push()
+            def img = docker.image("${DOCKER_IMAGE}")
+            img.push()
           }
         }
       }
     }
 
     stage('Update Deployment File') {
-      environment {
-        GIT_REPO_NAME = "Jenkins-Zero-To-Hero"
-        GIT_USER_NAME = "shravan256bit"
-      }
-      steps {
-        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+  steps {
+    withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
 
-          sh '''
-            git config --global --add safe.directory /var/lib/jenkins/workspace/CI_CD
+      sh """
+        cd ${WORKSPACE}
 
-            cd /var/lib/jenkins/workspace/CI_CD
+        git config --global --add safe.directory ${WORKSPACE}
 
-            git config user.email "shravanoncloud6@gmail.com"
-            git config user.name "shravan256bit"
+        echo 'Checking git repo:'
+        git status
 
-            sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" \
-              java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+        git config user.email "shravanoncloud6@gmail.com"
+        git config user.name "shravan256bit"
 
-            git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-            git commit -m "Update deployment image to version ${BUILD_NUMBER}" || echo "No changes to commit"
+        sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" \
+          java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
 
-            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
-          '''
-        }
-      }
+        git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+        git commit -m "Update deployment image to version ${BUILD_NUMBER}" || echo "No changes to commit"
+
+        git push https://${GITHUB_TOKEN}@github.com/shravan256bit/Jenkins-Zero-To-Hero.git HEAD:main
+      """
     }
+  }
+}
 
-  } // stages end
+
+  }
 }
