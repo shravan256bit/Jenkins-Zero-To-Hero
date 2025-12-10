@@ -1,9 +1,4 @@
 pipeline {
-
-  options {
-    skipDefaultCheckout(true)   // IMPORTANT: we will manually checkout
-  }
-
   agent {
     docker {
       image 'shravan256bit/maven-docker-agent:v1'
@@ -39,9 +34,7 @@ pipeline {
         withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
           sh """
             cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-            mvn sonar:sonar \
-              -Dsonar.login=$SONAR_TOKEN \
-              -Dsonar.host.url=${SONAR_URL}
+            mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN -Dsonar.host.url=${SONAR_URL}
           """
         }
       }
