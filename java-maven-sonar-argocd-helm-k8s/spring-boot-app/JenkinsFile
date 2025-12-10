@@ -1,15 +1,10 @@
 pipeline {
 agent {
-  docker {
-    image 'maven:3.9.9-eclipse-temurin-17-alpine'
-    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+    docker {
+      image 'abhishekf5/maven-abhishek-docker-agent:v1'
+      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+    }
   }
-}
-stage('Install Docker CLI') {
-  steps {
-    sh 'apk add docker-cli'
-  }
-}
   stages {
     stage('Checkout') {
       steps {
@@ -26,7 +21,7 @@ stage('Install Docker CLI') {
     }
  stage('Static Code Analysis') {
       environment {
-        SONAR_URL = "http://16.170.208.187:9000/"
+        SONAR_URL = "http://16.170.208.187:9000"
       }
       steps {
         withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
