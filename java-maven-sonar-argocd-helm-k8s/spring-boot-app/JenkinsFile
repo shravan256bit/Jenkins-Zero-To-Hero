@@ -57,7 +57,7 @@ agent {
                     echo "PWD: $PWD"
                     echo "WORKSPACE: ${WORKSPACE}"
 
-                    cd ${WORKSPACE
+                    cd ${WORKSPACE}
                     pwd
                     ls -a
                     git config user.email "shravanoncloud6@gmail.com"
