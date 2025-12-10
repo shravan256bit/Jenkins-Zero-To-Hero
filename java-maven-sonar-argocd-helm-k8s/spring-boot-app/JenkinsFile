@@ -54,6 +54,7 @@ agent {
         steps {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
                 sh '''
+                    cd ${WORKSPACE}
                     git config user.email "shravanoncloud6@gmail.com"
                     git config user.name "shravan256bit"
                     BUILD_NUMBER=${BUILD_NUMBER}
